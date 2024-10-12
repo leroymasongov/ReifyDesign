@@ -8,6 +8,7 @@ output_file_path = r"C:\Users\leroy\Downloads\nwidd\CAD_interactions_report.json
 # Function to extract shapes and connections from a Visio page
 def extract_page_data(page):
     page_data = {
+        "page_name": page.name,
         "shapes": [],
         "nodes": [],
         "connections": []
@@ -18,7 +19,9 @@ def extract_page_data(page):
         # Determine the shape type
         width = shape.width
         height = shape.height
-        if abs(width - height) < 1e-2:  # Tolerance for floating-point comparison
+        if shape.shape_name and "connect" in shape.shape_name.lower():
+            shape_type = "Connector"
+        elif abs(width - height) < 1e-2:  # Tolerance for floating-point comparison
             shape_type = "Circular"
         else:
             shape_type = "Rectangular"
@@ -28,7 +31,8 @@ def extract_page_data(page):
             "name": shape.shape_name,
             "text": shape.text,
             "type": shape.shape_type,
-            "shape_type": shape_type
+            "shape_type": shape_type,
+            "page_name": page.name
         }
         
         if shape.shape_name and "connector" in shape.shape_name.lower():
