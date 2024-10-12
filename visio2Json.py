@@ -15,11 +15,20 @@ def extract_page_data(page):
     
     # Extract shapes and categorize them into nodes and connections
     for shape in page.all_shapes:
+        # Determine the shape type
+        width = shape.width
+        height = shape.height
+        if abs(width - height) < 1e-2:  # Tolerance for floating-point comparison
+            shape_type = "Circular"
+        else:
+            shape_type = "Rectangular"
+        
         shape_data = {
             "id": shape.ID,
             "name": shape.shape_name,
             "text": shape.text,
-            "type": shape.shape_type
+            "type": shape.shape_type,
+            "shape_type": shape_type
         }
         
         if shape.shape_name and "connector" in shape.shape_name.lower():
@@ -27,11 +36,16 @@ def extract_page_data(page):
             from_shape_id = shape.connects[0].from_id if shape.connects else None
             to_shape_id = shape.connects[0].to_id if shape.connects else None
             
-            # Add from and to shape IDs to the shape data
-            shape_data["from_id"] = from_shape_id if from_shape_id else None
-            shape_data["to_id"] = to_shape_id if to_shape_id else None
+            # Split the text by commas if it contains commas
+            text_values = shape.text.split(',') if ',' in shape.text else [shape.text]
             
-            page_data["connections"].append(shape_data)
+            for text_value in text_values:
+                connector_data = shape_data.copy()
+                connector_data["text"] = text_value.strip()
+                connector_data["from_id"] = from_shape_id if from_shape_id else None
+                connector_data["to_id"] = to_shape_id if to_shape_id else None
+                
+                page_data["connections"].append(connector_data)
         else:
             page_data["nodes"].append(shape_data)
         
@@ -41,20 +55,11 @@ def extract_page_data(page):
 
 # Read the Visio file
 with VisioFile(input_file_path) as visio:
-    visio_data = {
-        "pages": []
-    }
-    
-    # Iterate through each page
+    data = []
     for page in visio.pages:
-        page_data = {
-            "name": page.name,
-            "components": extract_page_data(page)
-        }
-        visio_data["pages"].append(page_data)
+        page_data = extract_page_data(page)
+        data.append(page_data)
 
-# Write the data to a JSON file
-with open(output_file_path, 'w') as json_file:
-    json.dump(visio_data, json_file, indent=4)
-
-print(f"\n\n\nJSON report generated at {output_file_path}\n")
+# Write the extracted data to a JSON file
+with open(output_file_path, 'w') as f:
+    json.dump(data, f, indent=4)
