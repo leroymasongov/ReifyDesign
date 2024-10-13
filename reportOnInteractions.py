@@ -9,7 +9,7 @@ with open(input_file_path, 'r') as json_file:
 
 # Iterate through each page and its components
 for page in visio_data.get("pages", []):
-    print(f"Page: {page['name']}")
+    print(f"Page: {page['page_name']}")
     
     # Check nodes for "connect" in the name
     for node in page["components"].get("nodes", []):
